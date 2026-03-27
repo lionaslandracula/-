@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070910">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="人格图谱">
+<link rel="manifest" href="manifest.json">
+<title>人格图谱 — 你真的了解自己吗？</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;700&family=Noto+Sans+SC:wght@200;300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#070910;--bg1:#0B0D18;--bg2:#10121F;--bg3:#161928;
+  --border:rgba(255,255,255,.07);--bord2:rgba(255,255,255,.13);--bord3:rgba(255,255,255,.22);
+  --text:#EDE9E0;--text2:#9C99B0;--text3:#4E4D60;
+  --accent:#A78BFA;--acct2:#C4B5FD;--acct-d:rgba(167,139,250,.14);
+  --gold:#F4C95D;--gold-d:rgba(244,201,93,.12);
+  --teal:#2DD4BF;--teal-d:rgba(45,212,191,.10);
+  --rose:#F472B6;--rose-d:rgba(244,114,182,.10);
+  --coral:#FB923C;--coral-d:rgba(251,146,60,.10);
+  --blue:#60A5FA;--blue-d:rgba(96,165,250,.10);
+  --green:#4ADE80;--green-d:rgba(74,222,128,.10);
+  --serif:'Noto Serif SC',serif;--sans:'Noto Sans SC',sans-serif;
+  --r:10px;--r2:18px;--r3:28px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overscroll-behavior:none;background:var(--bg)}
+body{font-family:var(--sans);font-weight:300;color:var(--text);overflow:hidden}
+#root{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden}
+.view{display:none;min-height:100svh;flex-direction:column}
+.view.on{display:flex}
+#cvs{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5}
+
+/* LANDING */
+#vl{position:relative;z-index:1;align-items:stretch;padding:0}
+.hero{
+  position:relative;min-height:100svh;display:flex;flex-direction:column;
+  justify-content:center;padding:calc(3.5rem + env(safe-area-inset-top)) 1.5rem 2.5rem;
+  max-width:680px;margin:0 auto;width:100%;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 75% 55% at 75% 28%,rgba(167,139,250,.13) 0%,transparent 65%),
+             radial-gradient(ellipse 55% 40% at 18% 78%,rgba(45,212,191,.07) 0%,transparent 60%);
+}
+.eyebrow{display:flex;align-items:center;gap:8px;margin-bottom:2.75rem;font-size:11px;letter-spacing:.22em;color:var(--text3);text-transform:uppercase}
+.pulse-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:1;transform:scale(1.5)}}
+.hero-h{font-family:var(--serif);font-size:clamp(38px,10.5vw,66px);font-weight:300;line-height:1.12;letter-spacing:-.015em;margin-bottom:1.35rem;animation:fu .65s ease both}
+.hero-h em{font-style:normal;background:linear-gradient(135deg,#C4B5FD 0%,#7DDBBF 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-hook{font-family:var(--serif);font-size:clamp(14px,3.5vw,18px);font-weight:300;color:var(--text2);line-height:1.85;margin-bottom:2.75rem;max-width:450px;opacity:0;animation:fu .65s .14s ease forwards}
+.hero-stats{display:flex;gap:2.25rem;margin-bottom:3rem;opacity:0;animation:fu .65s .24s ease forwards}
+.stat{display:flex;flex-direction:column;gap:3px}
+.stat-n{font-family:var(--serif);font-size:26px;font-weight:400;color:var(--gold);line-height:1}
+.stat-l{font-size:11px;color:var(--text3);letter-spacing:.04em}
+.hero-cta{display:flex;flex-direction:column;gap:12px;opacity:0;animation:fu .65s .34s ease forwards}
+.btn-start{
+  display:inline-flex;align-items:center;gap:11px;width:fit-content;
+  padding:16px 36px;background:linear-gradient(135deg,#8B5CF6,#6D28D9);
+  border:none;border-radius:var(--r2);font-family:var(--serif);font-size:17px;font-weight:500;
+  color:#fff;cursor:pointer;letter-spacing:.02em;
+  box-shadow:0 8px 30px rgba(109,40,217,.4),inset 0 1px 0 rgba(255,255,255,.15);
+  transition:all .25s;position:relative;overflow:hidden;
+}
+.btn-start::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,.08));pointer-events:none}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(109,40,217,.5),inset 0 1px 0 rgba(255,255,255,.15)}
+.btn-start:active{transform:translateY(0)}
+.cta-note{font-size:12px;color:var(--text3);padding-left:2px;letter-spacing:.02em}
+
+/* ARC STRIP */
+.arc-wrap{padding:0 1.5rem 3rem;max-width:680px;margin:0 auto;width:100%}
+.arc-lbl{font-size:10px;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;margin-bottom:1rem}
+.arc-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x mandatory;-ms-overflow-style:none;scrollbar-width:none}
+.arc-strip::-webkit-scrollbar{display:none}
+.arc-card{
+  flex:0 0 148px;scroll-snap-align:start;border:.5px solid var(--border);border-radius:var(--r2);
+  padding:1.25rem 1rem 1.1rem;background:var(--bg2);cursor:pointer;
+  transition:all .22s;position:relative;overflow:hidden;
+}
+.arc-card::before{content:'';position:absolute;inset:0;background:var(--cg,rgba(167,139,250,.07));opacity:0;transition:opacity .2s}
+.arc-card:hover{border-color:var(--bord2);transform:translateY(-3px)}
+.arc-card:hover::before{opacity:1}
+.arc-icon{font-size:26px;margin-bottom:.7rem;display:block}
+.arc-name{font-family:var(--serif);font-size:15px;font-weight:400;color:var(--text);margin-bottom:.3rem}
+.arc-pct{font-size:11px;color:var(--text3);margin-bottom:.5rem}
+.arc-tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;background:var(--cb,var(--acct-d));color:var(--cc,var(--acct2))}
+
+/* TRANSITION */
+#vt{z-index:1;align-items:center;justify-content:center;padding:2.5rem 1.5rem;position:relative}
+#vt::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 65% 55% at 50% 50%,rgba(167,139,250,.07) 0%,transparent 70%);pointer-events:none}
+.trans-in{max-width:440px;width:100%;position:relative;z-index:1}
+.trans-num{
+  font-family:var(--serif);font-size:88px;font-weight:300;line-height:1;margin-bottom:.6rem;
+  background:var(--tg,linear-gradient(135deg,var(--acct2),var(--teal)));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.trans-part{font-size:11px;letter-spacing:.18em;color:var(--text3);text-transform:uppercase;margin-bottom:.5rem}
+.trans-name{font-family:var(--serif);font-size:32px;font-weight:300;color:var(--text);line-height:1.3;margin-bottom:.75rem}
+.trans-desc{font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:2.25rem}
+.trans-btn{
+  display:inline-flex;align-items:center;gap:9px;padding:13px 28px;
+  border:.5px solid var(--bord2);border-radius:var(--r);background:transparent;
+  color:var(--text);cursor:pointer;font-family:var(--sans);font-size:14px;transition:all .18s;
+}
+.trans-btn:hover{border-color:var(--accent);color:var(--acct2);background:var(--acct-d)}
+
+/* QUIZ */
+#vq{z-index:1;position:relative}
+.qhead{
+  position:sticky;top:0;z-index:20;
+  padding:.9rem 1.5rem .75rem;padding-top:calc(.9rem + env(safe-area-inset-top));
+  background:linear-gradient(to bottom,var(--bg) 55%,transparent);
+}
+.qhead-in{max-width:620px;margin:0 auto;display:flex;align-items:center;gap:12px}
+.prog-bg{flex:1;height:2px;background:var(--border);border-radius:2px;overflow:hidden}
+.prog-fill{height:2px;border-radius:2px;transition:width .4s ease,background .4s ease}
+.qnum{font-size:12px;color:var(--text3);white-space:nowrap}
+.qbody{max-width:580px;margin:0 auto;padding:1.25rem 1.5rem 6rem;width:100%}
+.qchip{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:20px;
+  font-size:11px;font-weight:500;margin-bottom:1.25rem;letter-spacing:.03em;
+  border:.5px solid;background:var(--cb);color:var(--cc);border-color:var(--cbd);
+}
+.qtxt{font-family:var(--serif);font-size:clamp(17px,4.5vw,22px);font-weight:300;line-height:1.75;color:var(--text);margin-bottom:1.75rem}
+.opts{display:flex;flex-direction:column;gap:9px}
+.opt{
+  width:100%;display:flex;align-items:center;gap:13px;padding:14px 16px;
+  border:.5px solid var(--border);border-radius:var(--r);background:var(--bg2);
+  cursor:pointer;font-family:var(--sans);font-size:14px;font-weight:300;
+  color:var(--text2);text-align:left;transition:all .15s;
+}
+.opt:hover{border-color:var(--bord2);background:var(--bg3);color:var(--text)}
+.opt.sel{border-color:var(--cc);background:var(--cb);color:var(--cc)}
+.odot{width:15px;height:15px;border-radius:50%;border:1.5px solid currentColor;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.opt.sel .odot::after{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;display:block}
+.qfoot{
+  position:fixed;bottom:0;left:0;right:0;z-index:20;
+  padding:1rem 1.5rem calc(1rem + env(safe-area-inset-bottom));
+  background:linear-gradient(to top,var(--bg) 60%,transparent);
+}
+.qfoot-in{max-width:580px;margin:0 auto;display:flex;justify-content:space-between;align-items:center}
+.qback{padding:10px 18px;border:.5px solid var(--border);border-radius:var(--r);background:transparent;cursor:pointer;font-size:13px;color:var(--text3);font-family:var(--sans);transition:all .15s}
+.qback:hover{color:var(--text);border-color:var(--bord2)}
+.qfwd{
+  padding:11px 28px;background:var(--cc,var(--accent));border:none;border-radius:var(--r);
+  cursor:pointer;font-size:14px;font-weight:500;color:#0D0D18;
+  font-family:var(--sans);transition:all .18s;
+}
+.qfwd:hover{opacity:.9}
+.qfwd:disabled{background:var(--bg3);color:var(--text3);cursor:not-allowed}
+
+/* SECTION THEMES */
+.tb5{--cb:rgba(167,139,250,.12);--cc:#C4B5FD;--cbd:rgba(196,181,253,.2)}
+.tat{--cb:rgba(74,222,128,.10);--cc:#86EFAC;--cbd:rgba(134,239,172,.2)}
+.tco{--cb:rgba(251,146,60,.10);--cc:#FDC878;--cbd:rgba(253,200,120,.2)}
+.teq{--cb:rgba(96,165,250,.10);--cc:#93C5FD;--cbd:rgba(147,197,253,.2)}
+.tva{--cb:rgba(244,201,93,.10);--cc:#FDE68A;--cbd:rgba(253,230,138,.2)}
+.trs{--cb:rgba(45,212,191,.10);--cc:#5EEAD4;--cbd:rgba(94,234,212,.2)}
+.tms{--cb:rgba(244,114,182,.10);--cc:#F9A8D4;--cbd:rgba(249,168,212,.2)}
+
+/* RESULTS */
+#vr{z-index:1;position:relative;padding-bottom:4rem}
+.res-hero{
+  position:relative;padding:3rem 1.5rem 2.5rem;text-align:center;overflow:hidden;
+  background:linear-gradient(180deg,rgba(124,58,237,.06) 0%,transparent 100%);
+}
+.res-hero::after{content:'';position:absolute;bottom:0;left:8%;right:8%;height:1px;background:linear-gradient(90deg,transparent,var(--bord2),transparent)}
+.res-eye{font-size:11px;letter-spacing:.22em;color:var(--accent);text-transform:uppercase;margin-bottom:.8rem}
+.res-h{font-family:var(--serif);font-size:clamp(28px,8vw,44px);font-weight:300;line-height:1.25;margin-bottom:.5rem}
+.res-h em{font-style:normal;background:linear-gradient(135deg,#C4B5FD,#7DDBBF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.res-sub{font-size:13px;color:var(--text3);margin-top:.5rem}
+.rbody{max-width:620px;margin:0 auto;padding:1.5rem 1.5rem}
+.slbl{font-size:10px;letter-spacing:.15em;color:var(--text3);text-transform:uppercase;display:block;margin-top:2rem;margin-bottom:.9rem}
+.sum-card{padding:1.25rem 1.5rem;border-left:2px solid var(--accent);background:linear-gradient(90deg,var(--acct-d),transparent);border-radius:0 var(--r) var(--r) 0;margin-bottom:.5rem}
+.sum-txt{font-size:14px;color:var(--text2);line-height:1.95}
+.sum-txt strong{color:var(--text);font-weight:500}
+.trow{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.tn{width:112px;flex-shrink:0;font-size:13px;color:var(--text2);line-height:1.35}
+.tt{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.tf{height:4px;border-radius:2px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.tv{font-size:12px;width:26px;text-align:right;color:var(--text2)}
+.ts{font-size:11px;width:12px;color:var(--gold)}
+.att-badge{display:inline-flex;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:500;margin-bottom:.75rem;border:.5px solid}
+.att-desc{font-size:13px;color:var(--text2);line-height:1.75;margin-bottom:.9rem}
+.cog-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.cog-row span{font-size:12px;color:var(--text3);width:44px}
+.cog-row span:last-child{text-align:right}
+.cog-bar{flex:1;height:8px;border-radius:4px;overflow:hidden;display:flex}
+.ci{background:linear-gradient(90deg,var(--teal),var(--green))}
+.ca{background:linear-gradient(90deg,var(--blue),var(--accent))}
+.ch{position:relative;width:100%;margin-bottom:.5rem}
+.cta-blk{
+  border:.5px solid var(--bord2);border-radius:var(--r3);
+  padding:2rem 1.75rem 2.25rem;
+  background:linear-gradient(135deg,var(--bg2),var(--bg3));
+  margin-top:2.25rem;position:relative;overflow:hidden;
+}
+.cta-blk::before{content:'';position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(167,139,250,.13),transparent 70%);pointer-events:none}
+.cta-ttl{font-family:var(--serif);font-size:22px;font-weight:300;line-height:1.4;margin-bottom:.65rem}
+.cta-ttl em{font-style:normal;color:var(--acct2)}
+.cta-desc{font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:1.5rem}
+.cta-go{
+  display:inline-flex;align-items:center;gap:10px;padding:15px 30px;
+  background:linear-gradient(135deg,var(--teal),#0891B2);
+  border:none;border-radius:var(--r2);font-family:var(--serif);font-size:16px;font-weight:500;
+  color:#fff;cursor:pointer;transition:all .22s;
+  box-shadow:0 6px 24px rgba(45,212,191,.25);
+}
+.cta-go:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(45,212,191,.35)}
+.retry{display:inline-flex;padding:10px 18px;border:.5px solid var(--border);border-radius:var(--r);background:transparent;cursor:pointer;font-size:12px;color:var(--text3);font-family:var(--sans);margin-top:1rem;transition:all .15s}
+.retry:hover{color:var(--text);border-color:var(--bord2)}
+
+/* ANIM */
+@keyframes fu{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes si{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fi{from{opacity:0}to{opacity:1}}
+.afu{animation:fu .45s ease both}
+.afi{animation:fi .3s ease both}
+.asi{animation:si .35s ease both}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bord2);border-radius:2px}
+@media(max-width:380px){.hero-h{font-size:34px}.stat-n{font-size:21px}}
+</style>
+</head>
+<body>
+<canvas id="cvs"></canvas>
+<div id="root">
+
+<!-- LANDING -->
+<div class="view on" id="vl">
+  <div class="hero">
+    <div class="eyebrow afu"><span class="pulse-dot"></span>深度人格测评 · 七大心理学框架</div>
+    <h1 class="hero-h">你以为<br>了解<em>自己</em>。<br>但真的吗？</h1>
+    <p class="hero-hook">大多数人对自己的了解，只停留在表面。<br>58道精心设计的题目，将穿透你的惯性自我认知，<br>揭示你真正的人格图谱。</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-n">58</span><span class="stat-l">道题目</span></div>
+      <div class="stat"><span class="stat-n">7</span><span class="stat-l">大框架</span></div>
+      <div class="stat"><span class="stat-n">~8分钟</span><span class="stat-l">完成时长</span></div>
+    </div>
+    <div class="hero-cta">
+      <button class="btn-start" onclick="App.start()">
+        开始探索自己
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3.5 9h11M10 5l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <span class="cta-note">没有对错 · 完全匿名 · 结果不存储</span>
+    </div>
+  </div>
+
+  <div class="arc-wrap">
+    <p class="arc-lbl">你会是哪种人格原型？</p>
+    <div class="arc-strip">
+      <div class="arc-card" style="--cg:rgba(167,139,250,.1);--cb:rgba(167,139,250,.1);--cc:#C4B5FD"><span class="arc-icon">🔭</span><p class="arc-name">探索者</p><p class="arc-pct">23% 的人</p><span class="arc-tag">高开放 · 直觉型</span></div>
+      <div class="arc-card" style="--cg:rgba(45,212,191,.08);--cb:rgba(45,212,191,.1);--cc:#5EEAD4"><span class="arc-icon">🏛️</span><p class="arc-name">守护者</p><p class="arc-pct">19% 的人</p><span class="arc-tag">安全型 · 高宜人</span></div>
+      <div class="arc-card" style="--cg:rgba(244,201,93,.08);--cb:rgba(244,201,93,.1);--cc:#FDE68A"><span class="arc-icon">⚡</span><p class="arc-name">驱动者</p><p class="arc-pct">17% 的人</p><span class="arc-tag">高尽责 · 内控型</span></div>
+      <div class="arc-card" style="--cg:rgba(244,114,182,.08);--cb:rgba(244,114,182,.1);--cc:#F9A8D4"><span class="arc-icon">🌊</span><p class="arc-name">共情者</p><p class="arc-pct">15% 的人</p><span class="arc-tag">高情商 · 焦虑依恋</span></div>
+      <div class="arc-card" style="--cg:rgba(251,146,60,.08);--cb:rgba(251,146,60,.1);--cc:#FDC878"><span class="arc-icon">🗺️</span><p class="arc-name">独行者</p><p class="arc-pct">14% 的人</p><span class="arc-tag">回避型 · 分析型</span></div>
+      <div class="arc-card" style="--cg:rgba(96,165,250,.08);--cb:rgba(96,165,250,.1);--cc:#93C5FD"><span class="arc-icon">🌀</span><p class="arc-name">矛盾者</p><p class="arc-pct">12% 的人</p><span class="arc-tag">混乱型 · 成长中</span></div>
+    </div>
+  </div>
+
+  <div style="padding:0 1.5rem 1.5rem;max-width:680px;margin:0 auto;width:100%">
+    <p class="arc-lbl">测评涵盖框架</p>
+    <div style="display:flex;flex-wrap:wrap;gap:7px">
+      <span style="padding:5px 12px;border-radius:20px;font-size:11px;border:.5px solid var(--border);color:var(--text3)">大五人格 OCEAN</span>
+      <span style="padding:5px 12px;border-radius:20px;font-size:11px;border:.5px solid var(--border);color:var(--text3)">Bowlby 依恋理论</span>
+      <span style="padding:5px 12px;border-radius:20px;font-size:11px;border:.5px solid var(--border);color:var(--text3)">Kahneman 双过程</span>
+      <span style="padding:5px 12px;border-radius:20px;font-size:11px;border:.5px solid var(--border);color:var(--text3)">Goleman 情绪智力</span>
+      <span style="padding:5px 12px;border-radius:20px;font-size:11px;border:.5px solid var(--border);color:var(--text3)">Schwartz 价值观</span>
+      <span style="padding:5px 12px;border-radius:20px;font-size:11px;border:.5px solid var(--border);color:var(--text3)">韧性心理学</span>
+      <span style="padding:5px 12px;border-radius:20px;font-size:11px;border:.5px solid var(--border);color:var(--text3)">Dweck 成长思维</span>
+    </div>
+    <div style="height:calc(2rem + env(safe-area-inset-bottom))"></div>
+  </div>
+</div>
+
+<!-- TRANSITION -->
+<div class="view" id="vt">
+  <div class="trans-in afu">
+    <p class="trans-part" id="tp"></p>
+    <p class="trans-num" id="tn"></p>
+    <p class="trans-name" id="tname"></p>
+    <p class="trans-desc" id="tdesc"></p>
+    <button class="trans-btn" onclick="App.go()">进入这部分 <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div class="view" id="vq">
+  <div class="qhead"><div class="qhead-in"><div class="prog-bg"><div id="pf" class="prog-fill" style="width:0%"></div></div><span id="pn" class="qnum"></span></div></div>
+  <div class="qbody"><span id="qc" class="qchip"></span><p id="qt" class="qtxt"></p><div id="qo" class="opts"></div></div>
+  <div class="qfoot"><div class="qfoot-in"><button id="qprev" class="qback" onclick="App.prev()">← 上一题</button><button id="qnext" class="qfwd" onclick="App.next()" disabled>继续</button></div></div>
+</div>
+
+<!-- RESULTS -->
+<div class="view" id="vr">
+  <div class="res-hero">
+    <p class="res-eye">你的测评报告</p>
+    <h2 class="res-h">你的<em>人格图谱</em>已生成</h2>
+    <p class="res-sub">基于 58 道题目 · 七大心理学框架的综合分析</p>
+  </div>
+  <div class="rbody" id="rb"></div>
+</div>
+
+</div>
+<script>
+/* PARTICLES */
+(()=>{
+  const c=document.getElementById('cvs'),x=c.getContext('2d');
+  let W,H,P=[];
+  const init=()=>{
+    W=c.width=innerWidth;H=c.height=innerHeight;P=[];
+    const n=Math.min(50,Math.floor(W*H/20000));
+    for(let i=0;i<n;i++)P.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.22,vy:(Math.random()-.5)*.22,r:Math.random()*1.6+.5,t:Math.random()>.5?0:1});
+  };
+  const draw=()=>{
+    x.clearRect(0,0,W,H);
+    P.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+      x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);
+      x.fillStyle=p.t?'rgba(45,212,191,.5)':'rgba(167,139,250,.5)';x.fill();
+    });
+    for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){
+      const dx=P[i].x-P[j].x,dy=P[i].y-P[j].y,d=Math.hypot(dx,dy);
+      if(d<95){x.beginPath();x.moveTo(P[i].x,P[i].y);x.lineTo(P[j].x,P[j].y);x.strokeStyle=`rgba(167,139,250,${.16*(1-d/95)})`;x.lineWidth=.5;x.stroke()}
+    }
+    requestAnimationFrame(draw);
+  };
+  window.addEventListener('resize',init);init();draw();
+})();
+
+/* DATA */
+const SECS={
+  B5:{name:'大五人格',chip:'大五人格 · OCEAN',desc:'测量你的五大核心人格维度——开放性、尽责性、外向性、宜人性与情绪稳定性。',p:1,c:'tb5',g:'linear-gradient(135deg,#C4B5FD,#A78BFA)',col:'#C4B5FD'},
+  AT:{name:'情感依恋模式',chip:'情感依恋模式',desc:'探索你在亲密关系中情感联结与依赖的核心模式，基于 Bartholomew 四维依恋模型。',p:2,c:'tat',g:'linear-gradient(135deg,#86EFAC,#4ADE80)',col:'#86EFAC'},
+  CO:{name:'认知风格',chip:'认知与思维风格',desc:'你习惯用直觉还是逻辑处理信息？了解你在决策与信息处理上的深层偏好。',p:3,c:'tco',g:'linear-gradient(135deg,#FDC878,#FB923C)',col:'#FDC878'},
+  EQ:{name:'情绪智力',chip:'情绪智力 · EQ',desc:'衡量你感知、理解与管理情绪的综合能力，基于 Goleman 五维情绪智力模型。',p:4,c:'teq',g:'linear-gradient(135deg,#93C5FD,#60A5FA)',col:'#93C5FD'},
+  VA:{name:'核心价值观',chip:'核心价值观',desc:'什么真正驱动着你？揭示你最深层的动机与人生优先级，基于 Schwartz 普适价值观体系。',p:5,c:'tva',g:'linear-gradient(135deg,#FDE68A,#F4C95D)',col:'#FDE68A'},
+  RS:{name:'心理韧性',chip:'心理韧性',desc:'衡量你在逆境、压力与不确定性中适应、坚持与复原的核心能力。',p:6,c:'trs',g:'linear-gradient(135deg,#5EEAD4,#2DD4BF)',col:'#5EEAD4'},
+  MS:{name:'思维模式与信念',chip:'思维模式与信念',desc:'探索你对成长、掌控感与自身潜能的核心信念，基于 Dweck 与 Rotter 经典理论。',p:7,c:'tms',g:'linear-gradient(135deg,#F9A8D4,#F472B6)',col:'#F9A8D4'},
+};
+const LK=['完全不符合','比较不符合','说不准','比较符合','完全符合'];
+const Q=[
+  ['我喜欢探索新奇的想法，对抽象概念充满好奇心。','B5','O',false],
+  ['我对艺术、音乐或文学有独特而深刻的欣赏力。','B5','O',false],
+  ['比起创新，我更偏向沿用经过验证的传统方式做事。','B5','O',true],
+  ['我做事有条理，总能在截止日期前按时完成任务。','B5','C',false],
+  ['开始一项重要任务前，我会认真制定详细计划。','B5','C',false],
+  ['我经常拖延，很难把事情有始有终地做完。','B5','C',true],
+  ['社交场合让我充满活力，我喜欢与人频繁互动交流。','B5','E',false],
+  ['我不介意在团体中发言，也不排斥成为众人关注的焦点。','B5','E',false],
+  ['长时间的社交活动之后，我需要大量独处时间来恢复精力。','B5','E',true],
+  ['我真诚地关心他人的感受，愿意主动帮助有需要的人。','B5','A',false],
+  ['为了维护和谐的关系，我愿意在争论中妥协退让。','B5','A',false],
+  ['我对他人的动机持保留态度，不太容易轻信他人。','B5','A',true],
+  ['我的情绪经常起伏波动，容易被情绪主导行动。','B5','N',false],
+  ['面对压力或不确定的状况时，我容易感到焦虑或不知所措。','B5','N',false],
+  ['面对困境与逆境，我通常能保持冷静，不轻易崩溃。','B5','N',true],
+  ['我很容易与他人建立深度、真诚的情感联结。','AT','SEC',false],
+  ['依赖他人、也让他人依赖我，对我来说感觉自然而舒适。','AT','SEC',false],
+  ['我常常担心自己在乎的人，并没有像我一样重视这段关系。','AT','ANX',false],
+  ['当重要的人没有及时回复我时，我会感到不安或持续忧虑。','AT','ANX',false],
+  ['我不太愿意向他人倾诉自己内心深处真实的感受与脆弱。','AT','AVD',false],
+  ['当关系变得过于亲密时，我会本能地想要保持距离、退缩。','AT','AVD',false],
+  ['我对亲密关系既有深深的渴望，又感到某种莫名的恐惧与不安。','AT','DIS',false],
+  ['有时候我会怀疑自己究竟是否真的值得被他人深深地爱着。','AT','DIS',false],
+  ['在做重要决定时，我更倾向于相信直觉感受，而非数据分析。','CO','INT',false],
+  ['我的最佳判断往往源自第一感觉，而非反复权衡推演。','CO','INT',false],
+  ['做决策前，我需要系统地评估所有可用的信息与选项。','CO','ANA',false],
+  ['我习惯用逻辑步骤拆解复杂问题，逐步推导出结论。','CO','ANA',false],
+  ['我更擅长把握整体格局与宏观趋势，而非专注于具体细节。','CO','HOL',false],
+  ['处理问题时，我倾向于同时考量多个相互关联的因素与影响。','CO','HOL',false],
+  ['我能精确地识别并清晰地命名自己当下的情绪状态。','EQ','SA',false],
+  ['我很清楚是哪些具体情境或因素触发了我的情绪变化。','EQ','SA',false],
+  ['即使处于强烈的负面情绪中，我也能有效地调节和管理自己的状态。','EQ','SR',false],
+  ['在冲动行动之前，我通常能停下来深呼吸、重新审视处境。','EQ','SR',false],
+  ['只需仔细观察对方的微表情或肢体语言，我就能感知其情绪。','EQ','EM',false],
+  ['他人的困境和痛苦会真实地触动我内心，让我产生深切的共情。','EQ','EM',false],
+  ['在复杂的人际冲突中，我善于找到兼顾各方的平衡解决方案。','EQ','SS',false],
+  ['与不同背景、性格或立场的人交往，我都能找到共同语言。','EQ','SS',false],
+  ['面对挫折时，内在的驱动力会促使我重新振作并坚持前进。','EQ','MT',false],
+  ['我能抵御短期诱惑与即时满足，为更长远有意义的目标而坚持。','EQ','MT',false],
+  ['个人自由与自主选择是我生活中最看重的核心事项之一。','VA','SDIR',false],
+  ['稳定的生活与安全感，对我比冒险和变化更具吸引力。','VA','SECU',false],
+  ['帮助他人、关心他人的福祉是我最深层的内在驱动力之一。','VA','BEN',false],
+  ['通过努力取得成就、获得认可与尊重对我极为重要。','VA','ACH',false],
+  ['新奇、刺激与高度的挑战让我感到兴奋，我渴望丰富多变的体验。','VA','STIM',false],
+  ['维护社会公平、为弱势群体发声是我义不容辞的深切责任。','VA','UNI',false],
+  ['遵守传统习俗、社会规范与道德准则对我有重要的意义。','VA','CONF',false],
+  ['对他人产生影响力、引领团队或掌握话语权是我的重要追求。','VA','POW',false],
+  ['遭遇失败或重大挫折后，我能相对快速地重新振作起来。','RS','RES',false],
+  ['我能把人生中的困难和挑战视为成长机会，而非单纯的威胁。','RS','RES',false],
+  ['在长期高压或不确定的环境下，我依然能找到心理平衡与应对资源。','RS','RES',false],
+  ['当原有计划彻底落空时，我能灵活调整思路，寻找新的可行路径。','RS','RES',false],
+  ['即使独自面对极其艰难的处境，我也深信自己终将渡过难关。','RS','RES',false],
+  ['我坚定地相信自己的能力与智识可以通过持续努力不断提升。','MS','GRW',false],
+  ['我把失败看作宝贵的反馈和学习机会，而非自身能力不足的证明。','MS','GRW',false],
+  ['我认为一个人的天赋与核心潜力在很大程度上是先天决定的。','MS','FXD',false],
+  ['面对极具挑战性的任务，我更倾向于回避，以免暴露自己的短板。','MS','FXD',false],
+  ['我坚信自己的努力、选择与态度在很大程度上决定了人生的走向。','MS','LOC',false],
+  ['我觉得生活中许多重要的事情都受到运气或外部力量的左右，超出我能掌控的范围。','MS','LOC',true],
+];
+
+const App=(()=>{
+  let ans=new Array(Q.length).fill(null),cur=0;
+  const $=id=>document.getElementById(id);
+  const NUMS=['一','二','三','四','五','六','七'];
+
+  function show(id){
+    document.querySelectorAll('.view').forEach(v=>{v.classList.remove('on');v.style.display='none'});
+    const el=$(id);el.style.display='flex';
+    requestAnimationFrame(()=>el.classList.add('on'));
+    $('root').scrollTo(0,0);
+  }
+  function sc(k){
+    const it=Q.map((q,i)=>({q,i})).filter(x=>x.q[2]===k);
+    if(!it.length)return 0;
+    let t=0;it.forEach(({q,i})=>{const r=ans[i]||0;t+=q[3]?(4-r):r;});
+    return Math.round(t/(it.length*4)*100);
+  }
+  function setCls(sid){
+    const v=$('vq');Object.values(SECS).forEach(s=>v.classList.remove(s.c));v.classList.add(SECS[sid].c);
+  }
+  function rq(){
+    const q=Q[cur],s=SECS[q[1]];
+    setCls(q[1]);
+    $('pf').style.width=Math.round(cur/Q.length*100)+'%';
+    $('pf').style.background=s.col;
+    $('pn').textContent=`${cur+1} / ${Q.length}`;
+    $('qc').textContent=s.chip;
+    const qt=$('qt');qt.classList.remove('asi');void qt.offsetWidth;qt.classList.add('asi');
+    qt.textContent=q[0];
+    const saved=ans[cur],o=$('qo');o.innerHTML='';
+    LK.forEach((l,i)=>{
+      const b=document.createElement('button');
+      b.className='opt'+(saved===i?' sel':'');
+      b.innerHTML=`<span class="odot"></span><span>${l}</span>`;
+      b.onclick=()=>{ans[cur]=i;rq()};o.appendChild(b);
+    });
+    $('qprev').style.visibility=cur===0?'hidden':'visible';
+    $('qnext').disabled=saved===null;
+    $('qnext').textContent=cur===Q.length-1?'查看结果 →':'继续';
+  }
+  function setT(sid){
+    const s=SECS[sid];
+    $('tp').textContent=`第 ${s.p} 部分 · 共 7 部分`;
+    const tn=$('tn');tn.textContent=NUMS[s.p-1];
+    tn.style.background=s.g;tn.style['-webkit-background-clip']='text';
+    tn.style['-webkit-text-fill-color']='transparent';tn.style['background-clip']='text';
+    $('tname').textContent=s.name;$('tdesc').textContent=s.desc;
+  }
+  function row(n,v,c,star=false){
+    return`<div class="trow"><span class="tn">${n}</span><div class="tt"><div class="tf" style="width:${v}%;background:${c}"></div></div><span class="tv">${v}</span><span class="ts">${star?'★':''}</span></div>`;
+  }
+  function buildRes(){
+    const b5={O:sc('O'),C:sc('C'),E:sc('E'),A:sc('A'),N:sc('N')};
+    const att={'安全型':sc('SEC'),'焦虑型':sc('ANX'),'回避型':sc('AVD'),'混乱型':sc('DIS')};
+    const ak=Object.entries(att).sort((a,b)=>b[1]-a[1])[0][0];
+    const AM={'安全型':{c:'#86EFAC',bg:'rgba(74,222,128,.12)',bd:'rgba(134,239,172,.25)',d:'你在亲密关系中感到自在，能自然建立信任，对依赖与被依赖都感到舒适从容。'},
+      '焦虑型':{c:'#FDC878',bg:'rgba(251,146,60,.12)',bd:'rgba(253,200,120,.25)',d:'你深深渴望亲密，但有时担忧关系的稳定性，对关系中的细微变化较为敏感。'},
+      '回避型':{c:'#C4B5FD',bg:'rgba(167,139,250,.12)',bd:'rgba(196,181,253,.25)',d:'你高度重视独立自主，当关系变得过于亲密时可能感到不适，倾向保持一定距离。'},
+      '混乱型':{c:'#93C5FD',bg:'rgba(96,165,250,.12)',bd:'rgba(147,197,253,.25)',d:'你对亲密关系有矛盾感受，既渴望深度连结，又对过度亲密感到困惑或不安。'}};
+    const am=AM[ak];
+    const intS=sc('INT'),anaS=sc('ANA'),holS=sc('HOL');
+    const intR=Math.round(intS/(intS+anaS||1)*100);
+    const cogL=intS>=anaS?'直觉主导型':'分析主导型';
+    const eq={'自我觉察':sc('SA'),'自我调节':sc('SR'),'共情能力':sc('EM'),'社交技巧':sc('SS'),'内在动力':sc('MT')};
+    const eqA=Math.round(Object.values(eq).reduce((a,b)=>a+b,0)/5);
+    const vals={'自主独立':sc('SDIR'),'追求稳定':sc('SECU'),'关怀他人':sc('BEN'),'成就进取':sc('ACH'),'刺激冒险':sc('STIM'),'公平正义':sc('UNI'),'传统规范':sc('CONF'),'影响力量':sc('POW')};
+    const vS=Object.entries(vals).sort((a,b)=>b[1]-a[1]);
+    const topV=vS.slice(0,3).map(v=>v[0]);
+    const res=sc('RES');
+    const resL=res>=75?'高韧性':res>=50?'中等韧性':'韧性待提升';
+    const resC=res>=75?'#5EEAD4':res>=50?'#FDE68A':'#FDC878';
+    const grw=Math.round((sc('GRW')*2+(100-sc('FXD'))+sc('LOC'))/4);
+    const grwL=grw>=70?'成长型心态':grw>=45?'混合型心态':'固定型心态';
+    const grwC=grw>=70?'#5EEAD4':grw>=45?'#FDE68A':'#FDC878';
+    const oL=b5.O>65?'高度开放':b5.O>40?'适度开放':'倾向保守';
+    const cL=b5.C>65?'高度自律':b5.C>40?'较为认真':'灵活随性';
+    const eL=b5.E>65?'外向活跃':b5.E>40?'弹性适中':'内向沉静';
+    const aL=b5.A>65?'温和合作':b5.A>40?'待人友善':'直接独立';
+    const nL=b5.N>65?'情绪敏感':b5.N>40?'适度敏感':'情绪稳定';
+    const prompt=`我刚完成了一份涵盖七大心理学框架的深度人格测评（58道题目），以下是我的完整结果：\n\n【大五人格 OCEAN】\n开放性 ${b5.O} / 尽责性 ${b5.C} / 外向性 ${b5.E} / 宜人性 ${b5.A} / 情绪反应性 ${b5.N}\n\n【情感依恋模式】\n主导：${ak}（安全型 ${att['安全型']}、焦虑型 ${att['焦虑型']}、回避型 ${att['回避型']}、混乱型 ${att['混乱型']}）\n\n【认知风格】${cogL}（直觉倾向 ${intR}%、整体思维 ${holS}）\n\n【情绪智力 EQ】均值 ${eqA}\n自我觉察 ${eq['自我觉察']} / 自我调节 ${eq['自我调节']} / 共情能力 ${eq['共情能力']} / 社交技巧 ${eq['社交技巧']} / 内在动力 ${eq['内在动力']}\n\n【核心价值观 Top 3】${topV.join('、')}\n完整排序：${vS.map(v=>v[0]).join(' → ')}\n\n【心理韧性】${res}/100（${resL}）\n【思维模式】${grwL}（成长心态指数 ${grw}/100）\n\n请基于以上完整数据，为我提供深度整合人格分析（中文），结构：\n1. 核心人格底色\n2. 维度交互分析与深层规律\n3. 亲密关系与人际互动模式\n4. 职场与目标追求中的行为特征\n5. 隐藏优势（不易被自己察觉的力量）\n6. 主要成长空间（具体可操作）\n语言温暖具体，结合分数给出有深度的洞察。`;
+    const vc=['#FDE68A','#F4C95D','#FDC878','rgba(255,255,255,.18)','rgba(255,255,255,.18)','rgba(255,255,255,.18)','rgba(255,255,255,.18)','rgba(255,255,255,.18)'];
+    $('rb').innerHTML=`
+<span class="slbl">核心摘要</span>
+<div class="sum-card"><p class="sum-txt">你是一个<strong>${eL}</strong>、<strong>${oL}</strong>、<strong>${cL}</strong>的人，待人<strong>${aL}</strong>，情绪上<strong>${nL}</strong>。在亲密关系中，你呈现<strong>${ak}依恋模式</strong>。你是<strong>${cogL}</strong>，综合情商均值 <strong>${eqA}</strong>。最看重<strong>${topV[0]}</strong>与<strong>${topV[1]}</strong>，心理韧性<strong>${resL}</strong>，持有<strong>${grwL}</strong>。</p></div>
+
+<span class="slbl">大五人格 · OCEAN</span>
+<div class="ch" style="height:240px"><canvas id="rr"></canvas></div>
+${row('开放性',b5.O,'#C4B5FD')}${row('尽责性',b5.C,'#86EFAC')}${row('外向性',b5.E,'#FDC878')}${row('宜人性',b5.A,'#FDE68A')}${row('情绪反应性',b5.N,'#93C5FD')}
+
+<span class="slbl">情感依恋模式</span>
+<div class="att-badge" style="background:${am.bg};color:${am.c};border-color:${am.bd}">${ak}</div>
+<p class="att-desc">${am.d}</p>
+${Object.entries(att).map(([n,v],i)=>row(n,v,['#86EFAC','#FDC878','#C4B5FD','#93C5FD'][i],n===ak)).join('')}
+
+<span class="slbl">认知风格</span>
+<div class="cog-row"><span style="text-align:right">直觉型</span><div class="cog-bar"><div class="ci" style="width:${intR}%"></div><div class="ca" style="width:${100-intR}%"></div></div><span>分析型</span></div>
+<p style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:.75rem">${cogL} · 直觉倾向 ${intR}%</p>
+${row('整体思维倾向',holS,'#FDC878')}
+
+<span class="slbl">情绪智力 EQ · 均值 ${eqA}</span>
+<div class="ch" style="height:${Object.keys(eq).length*42+28}px"><canvas id="re"></canvas></div>
+
+<span class="slbl">核心价值观排序</span>
+${vS.map(([n,v],i)=>row(n,v,vc[i],i<3)).join('')}
+
+<span class="slbl">心理韧性 · ${resL}</span>
+${row('韧性综合得分',res,resC)}
+
+<span class="slbl">思维模式 · ${grwL}</span>
+${row('成长心态指数',grw,grwC)}${row('成长型信念',sc('GRW'),'#5EEAD4')}${row('内控感',sc('LOC'),'#86EFAC')}
+
+<div class="cta-blk">
+<p class="cta-ttl">准备好揭开<em>更深的自己</em>？</p>
+<p class="cta-desc">这张图谱只是表面。你各维度之间的深层交互、你不曾意识到的隐藏优势、你在关系与职场中的真实行为模式——这些才是最有价值的洞察。</p>
+<button class="cta-go" onclick="App.deep(${JSON.stringify(prompt)})">获取我的深度解读 <svg width="17" height="17" viewBox="0 0 18 18" fill="none"><path d="M3.5 9h11M10 5l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+</div>
+<button class="retry" onclick="App.retry()">重新测评</button>
+<div style="height:2rem"></div>`;
+    setTimeout(()=>{
+      const rv=document.getElementById('rr');
+      if(rv&&window.Chart)new Chart(rv,{type:'radar',data:{labels:['开放性','尽责性','外向性','宜人性','情绪反应性'],datasets:[{data:[b5.O,b5.C,b5.E,b5.A,b5.N],backgroundColor:'rgba(167,139,250,.12)',borderColor:'rgba(196,181,253,.7)',borderWidth:1.5,pointBackgroundColor:'#C4B5FD',pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{min:0,max:100,ticks:{display:false,stepSize:25},grid:{color:'rgba(255,255,255,.05)'},pointLabels:{color:'rgba(156,153,176,.8)',font:{size:12,family:'Noto Sans SC'}},angleLines:{color:'rgba(255,255,255,.05)'}}}}});
+      const re=document.getElementById('re');
+      if(re&&window.Chart)new Chart(re,{type:'bar',data:{labels:Object.keys(eq),datasets:[{data:Object.values(eq),backgroundColor:['rgba(96,165,250,.85)','rgba(96,165,250,.7)','rgba(96,165,250,.55)','rgba(96,165,250,.4)','rgba(96,165,250,.28)'],borderRadius:3,barThickness:14}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{min:0,max:100,grid:{color:'rgba(255,255,255,.04)'},ticks:{color:'rgba(156,153,176,.7)',font:{size:11}}},y:{grid:{display:false},ticks:{color:'rgba(156,153,176,.85)',font:{size:12}}}}}});
+    },200);
+  }
+  return{
+    start(){setT('B5');show('vt')},
+    go(){show('vq');rq()},
+    prev(){if(cur>0){cur--;rq()}},
+    next(){
+      if(ans[cur]===null)return;
+      if(cur===Q.length-1){show('vr');buildRes();return}
+      const was=Q[cur][1];cur++;
+      if(Q[cur][1]!==was){setT(Q[cur][1]);show('vt')}else rq();
+    },
+    deep(t){if(typeof sendPrompt==='function')sendPrompt(t)},
+    retry(){ans=new Array(Q.length).fill(null);cur=0;show('vl')}
+  };
+})();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
